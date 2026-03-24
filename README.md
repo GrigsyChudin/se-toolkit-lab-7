@@ -63,6 +63,55 @@ This is what a customer might tell you. Your job is to turn it into a working pr
 3. Deployed and running on VM
 4. README documents deployment
 
+## Deploy
+
+The full stack (backend, bot, postgres, pgadmin, caddy) runs via Docker Compose.
+
+### Required env vars in `.env.docker.secret`
+
+| Variable | Description |
+|---|---|
+| `BOT_TOKEN` | Telegram bot token from @BotFather |
+| `LMS_API_KEY` | Bearer token for the LMS API |
+| `LLM_API_KEY` | API key for the Qwen Code proxy |
+| `LLM_API_MODEL` | Model name, e.g. `coder-model` |
+| `AUTOCHECKER_API_LOGIN` | Your university email |
+| `AUTOCHECKER_API_PASSWORD` | GitHub username + Telegram alias |
+
+Copy the example and fill in the values:
+
+```terminal
+cp .env.docker.example .env.docker.secret
+nano .env.docker.secret
+```
+
+### Start all services
+
+```terminal
+docker compose --env-file .env.docker.secret up --build -d
+```
+
+### Verify deployment
+
+```terminal
+# Check all containers are running
+docker compose --env-file .env.docker.secret ps
+
+# Check backend is healthy
+curl -sf http://localhost:42002/docs
+
+# Check bot logs
+docker compose --env-file .env.docker.secret logs bot --tail 20
+```
+
+### Populate the database
+
+```terminal
+curl -X POST http://localhost:42002/pipeline/sync \
+  -H "Authorization: Bearer YOUR_LMS_API_KEY" \
+  -H "Content-Type: application/json" -d '{}'
+```
+
 ## Learning advice
 
 Notice the progression above: **product brief** (vague customer ask) → **prioritized requirements** (structured) → **task specifications** (precise deliverables + acceptance criteria). This is how engineering work flows.
