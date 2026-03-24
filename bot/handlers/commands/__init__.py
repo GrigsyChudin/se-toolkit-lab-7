@@ -80,5 +80,5 @@ async def handle_scores(lab_id: str) -> str:
 
 
 async def handle_unknown(text: str) -> str:
-    # Task 3: route via LLM intent detection
-    return f"Unknown command: {text!r}\nUse /help to see available commands."
+    from services.llm_client import route
+    return await route(text)
