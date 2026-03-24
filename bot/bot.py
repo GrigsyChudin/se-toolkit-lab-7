@@ -55,10 +55,24 @@ async def _run_test(command_text: str) -> None:
     print(response)
 
 
+def _start_keyboard():
+    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="📋 Labs", callback_data="cmd:labs"),
+            InlineKeyboardButton(text="🏥 Health", callback_data="cmd:health"),
+        ],
+        [
+            InlineKeyboardButton(text="📊 Scores lab-04", callback_data="cmd:scores:lab-04"),
+            InlineKeyboardButton(text="❓ Help", callback_data="cmd:help"),
+        ],
+    ])
+
+
 async def _run_bot() -> None:
-    from aiogram import Bot, Dispatcher
+    from aiogram import Bot, Dispatcher, F
     from aiogram.filters import Command
-    from aiogram.types import Message
+    from aiogram.types import CallbackQuery, Message
 
     from config import settings
 
@@ -71,7 +85,7 @@ async def _run_bot() -> None:
 
     @dp.message(Command("start"))
     async def on_start(message: Message) -> None:
-        await message.answer(await handle_start())
+        await message.answer(await handle_start(), reply_markup=_start_keyboard())
 
     @dp.message(Command("help"))
     async def on_help(message: Message) -> None:
@@ -94,6 +108,24 @@ async def _run_bot() -> None:
     @dp.message()
     async def on_unknown(message: Message) -> None:
         await message.answer(await handle_unknown(message.text or ""))
+
+    @dp.callback_query(F.data.startswith("cmd:"))
+    async def on_button(call: CallbackQuery) -> None:
+        parts = (call.data or "").split(":", 2)
+        cmd = parts[1] if len(parts) > 1 else ""
+        arg = parts[2] if len(parts) > 2 else ""
+        if cmd == "labs":
+            response = await handle_labs()
+        elif cmd == "health":
+            response = await handle_health()
+        elif cmd == "scores":
+            response = await handle_scores(arg)
+        elif cmd == "help":
+            response = await handle_help()
+        else:
+            response = "Unknown button"
+        await call.message.answer(response)
+        await call.answer()
 
     await dp.start_polling(bot)
 
